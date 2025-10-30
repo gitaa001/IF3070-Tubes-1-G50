@@ -19,7 +19,6 @@ Bin Packing adalah masalah optimasi kombinatorial yang bertujuan untuk menempatk
 ### 3. Genetic Algorithm
 
 ## Cara Menjalankan
----
 ### Prerequisites
 - Python 3.13+
 - Matplotlib library
@@ -58,3 +57,12 @@ Setiap algoritma menampilkan:
 - Jumlah kontainer yang digunakan
 - Waktu eksekusi
 - Grafik perkembangan (jika ada perbaikan)
+
+## Contributors
+
+Berikut adalah daftar kontributor beserta pembagian tugasnya masing-masing:
+
+| **Nama** | **NIM**  | **Pembagian Tugas** |
+| ---------------------- | ------------- | ----------- |
+| Fadil Rifqi R P     | 18223107     | Stochastic, Sideway Move, Random-Restart, Simulated Annealing |
+| Anggita Najmi Layali| 18223122      | Steepest Ascent, Stochastic, Genetic Algorithm, setup program |
