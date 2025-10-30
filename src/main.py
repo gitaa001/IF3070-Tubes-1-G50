@@ -1,9 +1,5 @@
-import time
 import random
 from initializer import generate_initial_state
-from bin.objective_function import objective_function
-from bin.neighbor_state import generate_neighbors
-from bin.entity.barang import Barang
 from algorithm.hill_climbing.steepest_ascent.SteepestAscent import SteepestAscent
 from algorithm.hill_climbing.sideways_move.HillClimbingSideways import HillClimbingSideways
 from algorithm.hill_climbing.random_restart.RandomRestartHillClimbing import RandomRestartHillClimbing
@@ -50,94 +46,57 @@ def main_menu():
         if pilihan == '1':
             print("\nAnda memilih Steepest Ascent Hill-Climbing.")
 
-            # ===============================
-            # Inisialisasi data barang dari file input
             filename = input("Masukkan nama file input (misal: input.json): ")
             kapasitas, barang_list = load_input(filename)
 
-            # ===============================
-            # Buat state awal
-            # ===============================
             random.shuffle(barang_list)
             initial_state = generate_initial_state(barang_list, kapasitas)
             
-
-            # ===============================
-            # Jalankan algoritma
-            # ===============================
             algo = SteepestAscent(initial_state, kapasitas)
             algo.run()
 
         elif pilihan == '2':
-
-            # ===============================
-            # Inisialisasi data barang dari file input
             print("\nAnda memilih Hill-Climbing with Sideways Move.")
             filename = input("Masukkan nama file input (misal: input.json): ")
             kapasitas, barang_list = load_input(filename)
             
-            # ===============================
-            # Buat state awal
-            # ===============================
             random.shuffle(barang_list)
             initial_state = generate_initial_state(barang_list, kapasitas)
             
-            # ===============================
-            # Jalankan algoritma
-            # ===============================
             algo = HillClimbingSideways(initial_state, kapasitas)
             algo.run()
         
         elif pilihan == '3':
             print("\nAnda memilih Random Restart Hill-Climbing.")
 
-            # ===============================
-            # Inisialisasi data barang dari file input
             filename = input("Masukkan nama file input (misal: input.json): ")
             kapasitas, barang_list = load_input(filename)
             
-            # ===============================
-            # Jalankan algoritma
-            # ===============================
             algo = RandomRestartHillClimbing(barang_list, kapasitas)
             algo.run()
 
         elif pilihan == '4':
             print("\nAnda memilih Stochastic Hill-Climbing.")
-            # ===============================
-            # Inisialisasi data barang dari file input
+
             filename = input("Masukkan nama file input (misal: input.json): ")
             kapasitas, barang_list = load_input(filename)
             
-            # ===============================
-            # Buat state awal
-            # ===============================
             random.shuffle(barang_list)
             initial_state = generate_initial_state(barang_list, kapasitas)
 
-            # ===============================
-            # Jalankan algoritma
-            # ===============================
             algo = StochasticHillClimbing(initial_state, kapasitas)
             algo.run()
         
 
         elif pilihan == '5':
             print("\nAnda memilih Simulated Annealing.")
-            # ===============================
-            # Inisialisasi data barang dari file input
+
             filename = input("Masukkan nama file input (misal: input.json): ")
             kapasitas, barang_list = load_input(filename)
             
-            # ===============================
-            # Buat state awal
-            # ===============================
             random.shuffle(barang_list)
             initial_state = generate_initial_state(barang_list, kapasitas)
 
-            # ===============================
-            # Jalankan algoritma
-            # ===============================
             algo = SimulatedAnnealing(initial_state, kapasitas)
             algo.run()
         
@@ -147,14 +106,7 @@ def main_menu():
             filename = input("Masukkan nama file input (misal: input.json): ")
             kapasitas, barang_list = load_input(filename)
 
-            # ===============================
-            # Buat state awal
-            # ===============================
             initial_state = generate_initial_state(barang_list, kapasitas)
-
-            # ===============================
-            # Jalankan algoritma
-            # ===============================
             ga = GeneticAlgorithm(initial_state, kapasitas)
             ga.run()
 
