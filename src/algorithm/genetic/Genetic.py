@@ -1,119 +1,87 @@
-from copy import deepcopy
+import random
+import time
 import matplotlib.pyplot as plt
-import time, random
 from bin.objective_function import objective_function
-from bin.neighbor_state import generate_neighbors
-
+from bin.state import State 
 
 class GeneticAlgorithm:
     def __init__(self, initial_state, kapasitas):
-        """
-        Genetic Algorithm untuk optimisasi penempatan barang ke kontainer.
-        Parameter utama (population_size, max_iterasi, mutation_rate)
-        akan diminta sebagai input dari user.
-        """
         self.initial_state = initial_state
         self.kapasitas = kapasitas
-
+        
         print("\n=== Input Parameter Genetic Algorithm ===")
         self.population_size = int(input("Masukkan jumlah populasi: "))
         self.max_iterasi = int(input("Masukkan banyak iterasi (generasi): "))
-        self.mutation_rate = float(input("Masukkan probabilitas mutasi (contoh: 0.1): "))
+        self.mutation_rate = float(input("Masukkan probabilitas mutasi (contoh 0.1): "))
+
+        # ambil jumlah barang
+        self.barang_list = []
+        for k in initial_state.kontainer_list:
+            for b in k.isi:
+                self.barang_list.append(b)
+        self.n_barang = len(self.barang_list)
+
+        # banyak kontainer awal = batas max kontainer
+        self.max_kontainer = len(initial_state.kontainer_list)
 
         self.population = []
-        self.best_state = None
+        self.best_chrom = None
         self.best_value = float("inf")
-        self.best_history = [] # objective terbaik tiap iterasi
-        self.avg_history = [] # rata-rata objective tiap iterasi
-        self.history = []  # catatan nilai objective tiap iterasi
+        self.best_history = []
+        self.avg_history = []
 
     def initialize_population(self):
-        self.population = [deepcopy(self.initial_state)]
+        # hasil awal pakai representasi kromosom
+        init_chrom = []
+        mapping = {} 
+        for idx_k, k in enumerate(self.initial_state.kontainer_list):
+            for b in k.isi:
+                mapping[b.id] = idx_k
+        
+        for b in self.barang_list:
+            init_chrom.append(mapping[b.id])
+        
+        self.population.append(init_chrom)
+
         while len(self.population) < self.population_size:
-            neighbors = generate_neighbors(self.initial_state)
-            if neighbors:
-                self.population.append(random.choice(neighbors))
-            else:
-                break
+            chrom = [random.randint(0, self.max_kontainer - 1) for _ in range(self.n_barang)]
+            self.population.append(chrom)
 
-    def fitness(self, state):
-        obj_value = objective_function(state, self.kapasitas)
-        return 1 / (1 + obj_value)
+    def decode(self, chrom):
+        from bin.entity.kontainer import Kontainer
 
-    def select_parent(self):
-        fitness_values = [self.fitness(ind) for ind in self.population]
-        total_fit = sum(fitness_values)
-        pick = random.uniform(0, total_fit)
-        current = 0
-        for i, f in enumerate(fitness_values):
-            current += f
-            if current >= pick:
-                return deepcopy(self.population[i])
+        kontainer_real = [Kontainer(self.kapasitas) for _ in range(self.max_kontainer)]
+        for idx_barang, id_k in enumerate(chrom):
+            kontainer_real[id_k].tambah_barang(self.barang_list[idx_barang])
 
-    def crossover(self, parent1, parent2):
-        child1, child2 = deepcopy(parent1), deepcopy(parent2)
-        min_len = min(len(parent1.kontainer_list), len(parent2.kontainer_list))
-        if min_len > 1:
-            point = random.randint(1, min_len - 1)
-            child1.kontainer_list[:point], child2.kontainer_list[:point] = (
-                deepcopy(parent2.kontainer_list[:point]),
-                deepcopy(parent1.kontainer_list[:point])
-            )
-        return child1, child2
+        # if kontainer kosong = remove
+        kontainer_real = [k for k in kontainer_real if len(k.isi) > 0]
+        return kontainer_real
 
-    def mutate(self, state):
+    def evaluate(self, chrom):
+        kontainer_real = self.decode(chrom)
+        return objective_function(State(kontainer_real), self.kapasitas)
+
+    def selection(self):
+        # Tournament selection
+        a = random.choice(self.population)
+        b = random.choice(self.population)
+        return a if self.evaluate(a) < self.evaluate(b) else b
+
+    def crossover(self, p1, p2):
+        point = random.randint(1, self.n_barang - 1)
+        c1 = p1[:point] + p2[point:]
+        c2 = p2[:point] + p1[point:]
+        return c1, c2
+
+    def mutate(self, chrom):
         if random.random() > self.mutation_rate:
-            return state   # tidak terjadi mutasi
-
-        new_state = deepcopy(state)
-        kontainer_list = new_state.kontainer_list
-
-        # pilih barang acak
-        # cari kontainer sumber yang tidak kosong
-        sumber = random.choice([k for k in kontainer_list if k.isi])
-
-        barang = random.choice(sumber.isi)
-
-        mutation_type = random.randint(1,3)
-
-        # ========== 1. Pindahkan barang ke kontainer lain =============
-        if mutation_type == 1:
-            tujuan = random.choice(kontainer_list)
-            if tujuan != sumber:
-                sumber.hapus_barang(barang)
-                if not tujuan.tambah_barang(barang):
-                    sumber.tambah_barang(barang)
-
-        # ======= 2. Tukar barang antar dua kontainer ================
-        elif mutation_type == 2:
-            kontainer_lain = random.choice([k for k in kontainer_list if k != sumber and k.isi])
-            barang_lain = random.choice(kontainer_lain.isi)
-
-            # swap
-            sumber.hapus_barang(barang)
-            kontainer_lain.hapus_barang(barang_lain)
-
-            # coba tukar
-            if sumber.tambah_barang(barang_lain) and kontainer_lain.tambah_barang(barang):
-                pass
-            else:
-                sumber.tambah_barang(barang)
-                kontainer_lain.tambah_barang(barang_lain)
-
-        # =========== 3. Pindahkan ke kontainer baru ==================
-        elif mutation_type == 3:
-            from bin.entity.kontainer import Kontainer
-            sumber.hapus_barang(barang)
-            kontainer_baru = Kontainer(self.kapasitas)
-            kontainer_baru.tambah_barang(barang)
-            kontainer_list.append(kontainer_baru)
-
-        # hapus kontainer kosong
-        for k in kontainer_list[:]:
-            if len(k.isi) == 0:
-                kontainer_list.remove(k)
-
-        return new_state
+            return chrom 
+        # mutasi: pindahkan 1 barang ke kontainer lain
+        idx = random.randint(0, self.n_barang - 1)
+        new_k = random.randint(0, self.max_kontainer - 1)
+        chrom[idx] = new_k
+        return chrom
 
     def run(self):
         self.initialize_population()
@@ -122,59 +90,69 @@ class GeneticAlgorithm:
         print("STATE AWAL GENETIC ALGORITHM")
         print("==============================")
         print(self.initial_state)
-        print(f"Objective awal  : {objective_function(self.initial_state, self.kapasitas)}")
-        print(f"Jumlah kontainer: {len(self.initial_state.kontainer_list)}\n")
-        start_time = time.time()
+        print(f"Objective awal  : {objective_function(self.initial_state, self.kapasitas)}\n")
 
-        for i in range(self.max_iterasi):
-            scored = [(ind, objective_function(ind, self.kapasitas)) for ind in self.population]
-            scored.sort(key=lambda x: x[1])  
+        start = time.time()
+
+        for gen in range(self.max_iterasi):
+            scored = [(chrom, self.evaluate(chrom)) for chrom in self.population]
+            scored.sort(key=lambda x: x[1])
 
             best_val = scored[0][1]
             avg_val = sum(val for _, val in scored) / len(scored)
 
             self.best_history.append(best_val)
             self.avg_history.append(avg_val)
+
             if best_val < self.best_value:
                 self.best_value = best_val
-                self.best_state = deepcopy(scored[0][0])
+                self.best_chrom = scored[0][0]
 
-            print(f"Iterasi {i+1} | Best: {best_val} | Avg: {avg_val}")
+            print(f"Iterasi {gen+1} | Best: {best_val} | Avg: {avg_val}")
 
-            new_population = []
-            while len(new_population) < self.population_size:
-                parent1 = self.select_parent()
-                parent2 = self.select_parent()
-                child1, child2 = self.crossover(parent1, parent2)
-                new_population.extend([self.mutate(child1), self.mutate(child2)])
-            self.population = new_population[:self.population_size]
+            new_pop = []
+            while len(new_pop) < self.population_size:
+                p1 = self.selection()
+                p2 = self.selection()
+                c1, c2 = self.crossover(p1, p2)
+                c1 = self.mutate(c1)
+                c2 = self.mutate(c2)
+                new_pop.extend([c1, c2])
 
-        elapsed_time = time.time() - start_time
+            self.population = new_pop[:self.population_size]
+
+        elapsed = time.time() - start
+
+        best_kontainer = self.decode(self.best_chrom)
 
         print("\n==============================")
-        print("STATE AWAL GENETIC ALGORITHM")
+        print("STATE AKHIR GENETIC ALGORITHM")
         print("==============================")
-        print("State terbaik:")
-        print(self.best_state)
+
+        for i, k in enumerate(best_kontainer):
+            print(f"Kontainer {i+1}: {k}")
+
         print("\nDetail Eksekusi:")
-        print(f"{'Objective Terbaik':25s}: {self.best_value}")
-        print(f"{'Jumlah Iterasi':25s}: {self.max_iterasi}")
-        print(f"{'Jumlah Populasi':25s}: {self.population_size}")
-        print(f"{'Probabilitas Mutasi':25s}: {self.mutation_rate}")
-        print(f"{'Waktu Eksekusi':25s}: {elapsed_time:.4f} detik")
+        print(f"Objective Terbaik        : {self.best_value}")
+        print(f"Jumlah Iterasi           : {self.max_iterasi}")
+        print(f"Jumlah Populasi          : {self.population_size}")
+        print(f"Probabilitas Mutasi      : {self.mutation_rate}")
+        print(f"Waktu Eksekusi           : {elapsed:.4f} detik")
         print("=" * 32)
 
         self.show_plot()
-        return self.best_state, self.best_value, elapsed_time
+
+        return best_kontainer, self.best_value, elapsed
 
     def show_plot(self):
         plt.figure(figsize=(10, 6))
-        plt.plot(self.best_history, marker="o", label="Objective Value (Min)")
-        plt.plot(self.avg_history, marker="x", label="Rata-rata Objective per Iterasi")
-        plt.title("Perkembangan Objective Value per Iterasi")
+        plt.plot(self.best_history, label="Best Objective")
+        plt.plot(self.avg_history, label="Avg Objective")
         plt.xlabel("Iterasi")
         plt.ylabel("Objective Value")
+        plt.title("Perkembangan Objective Value terhadap Iterasi")
+        plt.grid(True)
         plt.legend()
-        plt.grid(True, linestyle="--", linewidth=0.5)
         plt.tight_layout()
         plt.show()
+
