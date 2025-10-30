@@ -6,7 +6,7 @@ def load_input(filename):
     base_dir = os.path.dirname(os.path.abspath(__file__))
 
     while True:
-        file_path = os.path.join(base_dir, filename)
+        file_path = os.path.join(base_dir, "input_data", filename)
         print(f"\nMembaca file dari: {file_path}")
 
         # Cek apakah file ada

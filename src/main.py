@@ -110,10 +110,10 @@ def main_menu():
 
 
         elif pilihan == '7':
-            print("\NTerima kasih telah menggunakan program ini. Keluar...")
+            print("\nTerima kasih telah menggunakan program ini. Keluar...")
             break
         else:
-            print("\NOpsi tidak valid. Silakan coba lagi.")
+            print("\nOpsi tidak valid. Silakan coba lagi.")
 
 if __name__ == "__main__":
     main_menu()
