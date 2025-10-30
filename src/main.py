@@ -9,7 +9,6 @@ from algorithm.genetic.Genetic import GeneticAlgorithm
 from utils import load_input
 
 def main_menu():
-    print("==================================START===================================")
     print(r"""
     ________________________________________________
                         
@@ -26,7 +25,6 @@ def main_menu():
     """)
 
     while True:
-        print("=====================================================================")
         print("""
             +-------------------------------+
             |     PILIH ALGORITMA YANG      |
@@ -112,12 +110,11 @@ def main_menu():
 
 
         elif pilihan == '7':
-            print("Terima kasih telah menggunakan program ini. Keluar...")
+            print("\NTerima kasih telah menggunakan program ini. Keluar...")
             break
         else:
-            print("Opsi tidak valid. Silakan coba lagi.")
+            print("\NOpsi tidak valid. Silakan coba lagi.")
 
-# Panggilan fungsi main
 if __name__ == "__main__":
     main_menu()
     print(r"""
@@ -134,4 +131,3 @@ if __name__ == "__main__":
                                                                                                  
     ________________________________________________
     """)
-    print("===========================END===========================")
